@@ -1,1 +1,1 @@
-readme
+This is JANUS repository
