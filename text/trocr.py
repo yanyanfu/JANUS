@@ -7,6 +7,7 @@ import ntpath
 import torch
 import requests 
 import pytesseract
+import argparse
 
 import lanms
 import model
@@ -114,13 +115,12 @@ def sort_poly(p):
 
 def main(argv=None):
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    art_path = Path('JANUS_reproduction_package/artifacts')
-    checkpoint_path = './east_icdar2015_resnet_v1_50_rbox'
-    output_dir = './extracted_txt/new'
-    fps = 5
+    text_path = Path(args.art_path)/'models'/'text'
+    checkpoint_path = text_path /'east_icdar2015_resnet_v1_50_rbox'
+    output_dir = text_path / 'Lucene'/ 'extracted_txt'
 
     processor = TrOCRProcessor.from_pretrained("microsoft/trocr-large-printed") 
     trocr_model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-large-printed")
@@ -148,10 +148,10 @@ def main(argv=None):
             model_path = os.path.join(checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
             saver.restore(sess, model_path)
 
-            video_output_path = os.path.join(output_dir, "text_trocr_" + str(fps))
+            video_output_path = os.path.join(output_dir, "text2_" + str(args.fps))
             Path(video_output_path).mkdir(parents=True, exist_ok=True)
 
-            vid_ds = prep.VideoDataset.from_path(art_path/"videos_new").label_from_paths()
+            vid_ds = prep.VideoDataset.from_path(args.art_path/"videos").label_from_paths()
             videos = [vid.vid_path for vid in vid_ds.videos]
 
             for video_path in videos:
@@ -160,8 +160,14 @@ def main(argv=None):
                 video_name = file_name + "-" + str(video_path_obj.parent.parent.parent.stem)
 
                 out_file = os.path.join(video_output_path, video_name + '.json')
-                frame_path = os.path.join(output_dir, "frames_" + str(fps), video_name)
+                frame_path = os.path.join(output_dir, "frames_" + str(args.fps), video_name)
                 Path(frame_path).mkdir(parents=True, exist_ok=True)
+
+                frames = utils_tango.find_file("*.jpeg", frame_path)
+                if not frames:
+                    utils_tango.extract_frames(video_path_obj, frame_path, args.fps)
+                frames = utils_tango.find_file("*.jpeg", frame_path)
+                
                 frames = utils_tango.find_file("*.jpeg", frame_path)
 
                 frames_text = []
@@ -218,4 +224,15 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    ## Required parameters
+    parser.add_argument("--art_path", default='../../JANUS_reproduction_package/artifacts', type=str, required=True,
+                        help="The artifact path.")
+    parser.add_argument("--fps", default=5, type=int, required=True,
+                        help="Frame rate")
+    
+    #print arguments
+    args = parser.parse_args()
+
     tf.app.run()
