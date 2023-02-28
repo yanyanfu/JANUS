@@ -1,4 +1,3 @@
-# Cell
 import json
 import ntpath
 import os
@@ -14,7 +13,7 @@ from pathlib import Path
 from eval_basic import *
 from utils_tango import *
 
-# Cell
+
 def execute_retrieval_run(run, similarities):
     ranking = {}
     query = run["query"]
@@ -88,8 +87,8 @@ def write_rankings(output_path, rankings):
 # Cell
 def convert_results_format(sim_path, settings_path, out_path, models):
     similarities_path = sim_path
-    output_results = out_path/"user_results_weighted_all"
-    output_rankings = out_path/"user_rankings_weighted_all"
+    # output_results = out_path/"user_results_weighted_all"
+    # output_rankings = out_path/"user_rankings_weighted_all"
     techniques = ["weighted_lcs", "bovw", "lcs", "bovw_lcs", "bovw_weighted_lcs"]
     systems_allowed = []
 
@@ -138,8 +137,8 @@ def convert_results_format(sim_path, settings_path, out_path, models):
 
     print("Writing results and rankings")
 
-    write_results(output_results, all_results)
-    write_rankings(output_rankings, all_rankings)
+    write_results(out_path, all_results)
+    write_rankings(out_path, all_rankings)
 
     print("done")
 
@@ -184,16 +183,6 @@ def tango_combined(
     results_out_path = out_path/"tango_comb_results"
     rankings_out_path = out_path/"tango_comb_rankings"
 
-    # calibration
-    # settings_path = 'evaluation_settings_split/calibration'
-    # results_out_path = "comb_results_calib"
-    # rankings_out_path = "comb_rankings_calib"
-
-    # test
-    # settings_path = 'evaluation_settings_split/test'
-    # results_out_path = "comb_results_test"
-    # rankings_out_path = "comb_rankings_test"
-
     Path(results_out_path).mkdir(parents=True, exist_ok=True)
     Path(rankings_out_path).mkdir(parents=True, exist_ok=True)
 
@@ -208,14 +197,6 @@ def tango_combined(
     ir_rankings_by_config = group_dict(ir_rankings, lambda rec: (rec['model'], rec['fps'] + "ftk",
                                                                     rec['technique'],))
 
-#     best_dl_models = [
-#         "M00-10000vw-1ftk-bovw_weighted_lcs", "M00-10000vw-1ftk-weighted_lcs",
-#         "M00-10000vw-5ftk-bovw_weighted_lcs", "M00-1000vw-1ftk-weighted_lcs", "M00-1000vw-5ftk-bovw",
-#         "M00-1000vw-5ftk-bovw_weighted_lcs", "M00-5000vw-5ftk-weighted_lcs", "M01-1000vw-5ftk-bovw",
-#         "M01-5000vw-5ftk-bovw_lcs", "M01-5000vw-5ftk-bovw_weighted_lcs",
-#         "M01-1000vw-5ftk-bovw_weighted_lcs"]
-#     best_ir_models = ["ocr+ir--1ftk-all_text", "ocr+ir--5ftk-all_text", "ocr+ir--5ftk-unique_frames",
-#                       "ocr+ir--5ftk-unique_words"]
 
     ir_model_apps_for_comb = {
         "1ftk-all_text": ['APOD', 'DROID', 'GNU', 'GROW'],

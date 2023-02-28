@@ -17,6 +17,7 @@ https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision
 """
 import math
 from functools import partial
+from sklearn.metrics.pairwise import cosine_similarity
 
 import torch
 import torch.nn as nn
@@ -396,3 +397,8 @@ class DINOHead(nn.Module):
         x = nn.functional.normalize(x, dim=-1, p=2)
         x = self.last_layer(x)
         return x
+
+
+def frame_sim(features_i, features_j, codebook, df, vw):
+    sim = cosine_similarity(features_i, features_j)[0][0]
+    return sim

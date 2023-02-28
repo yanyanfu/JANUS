@@ -118,8 +118,8 @@ def main(argv=None):
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    text_path = Path(args.art_path)/'models'/'text'
-    checkpoint_path = text_path /'east_icdar2015_resnet_v1_50_rbox'
+    text_path = Path(args.art_path) / 'models' / 'text'
+    checkpoint_path = text_path / 'east_icdar2015_resnet_v1_50_rbox'
     output_dir = text_path / 'Lucene'/ 'extracted_txt'
 
     processor = TrOCRProcessor.from_pretrained("microsoft/trocr-large-printed") 
@@ -151,7 +151,7 @@ def main(argv=None):
             video_output_path = os.path.join(output_dir, "text2_" + str(args.fps))
             Path(video_output_path).mkdir(parents=True, exist_ok=True)
 
-            vid_ds = prep.VideoDataset.from_path(args.art_path/"videos").label_from_paths()
+            vid_ds = prep.VideoDataset.from_path(Path(args.art_path)/"videos").label_from_paths()
             videos = [vid.vid_path for vid in vid_ds.videos]
 
             for video_path in videos:
@@ -227,9 +227,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--art_path", default='../../JANUS_reproduction_package/artifacts', type=str, required=True,
+    parser.add_argument("--art_path", default='../../JANUS_reproduction_package/artifacts', type=str, required=False,
                         help="The artifact path.")
-    parser.add_argument("--fps", default=5, type=int, required=True,
+    parser.add_argument("--fps", default=5, type=int, required=False,
                         help="Frame rate")
     
     #print arguments

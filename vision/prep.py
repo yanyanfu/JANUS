@@ -18,11 +18,10 @@ import pandas as pd
 from collections import defaultdict, OrderedDict
 from pathlib import Path
 from PIL import Image
-from utils import *
+from DINO.JANUS.vision.utils2 import *
 from shutil import copyfile
 from tqdm.auto import tqdm
 
-# Cell
 def get_rand_imgs(vid_path, max_msecs, n = 10):
     vid = cv2.VideoCapture(str(vid_path))
 
@@ -37,7 +36,6 @@ def get_rand_imgs(vid_path, max_msecs, n = 10):
 
     return imgs
 
-# Cell
 def vid_from_frames(frames, output = None, fr = 30):
     """Generate video from list of frame paths."""
     if not output: output = frames.parent
@@ -49,18 +47,16 @@ def vid_from_frames(frames, output = None, fr = 30):
     except Exception as e:
         print("Error occured:", e)
 
-# Cell
+
 class Video:
     def __init__(self, vid_path, fr = None, overwrite = False):
-        self.video = cv2.VideoCapture(str(vid_path))
         self.vid_path = vid_path
         self.fr = eval(ffmpeg.probe(vid_path)["streams"][0]["avg_frame_rate"])
-        print (self.fr)
         if fr is not None:
-            print ("****************************")
             self.fr = fr
             self.vid_path = self._fix_framerate(vid_path, fr, overwrite)
 
+        self.video = cv2.VideoCapture(str(self.vid_path))
 
     def show_frame(self, i):
         plt.imshow(self[i])
@@ -89,7 +85,7 @@ class Video:
         if not suc: return None
         return Image.fromarray(frame)
 
-# Cell
+
 class VideoDataset:
     def __init__(self, videos):
         self.videos = videos
@@ -112,25 +108,20 @@ class VideoDataset:
     def from_path(path, extract_frames = False, fr = None, overwrite = False):
         videos = []
         fixed_vid_paths = sorted(path.rglob(f"*fixed_{fr}.mp4"))
-        print ("--------fixed_vid_paths--------------", len(fixed_vid_paths))
-        if len(fixed_vid_paths) > 0:
+        if len(fixed_vid_paths) > 0 and fr is not None:
             for vid_path in fixed_vid_paths:
-                print (vid_path)
                 videos.append(Video(vid_path, overwrite = overwrite))
         else:
-            vid_paths = sorted(path.rglob('*.mp4'))
-            print(len(vid_paths))
+            vid_paths = list(filter(lambda x: "fixed" not in str(x), sorted(path.rglob('*.mp4'))))
             for vid_path in vid_paths:
-                if ("fixed" not in str(vid_path)):
-                    print (vid_path)
-                    videos.append(Video(vid_path, fr = fr, overwrite = overwrite))
+                videos.append(Video(vid_path, fr = fr, overwrite = overwrite))
 
         return VideoDataset(videos)
 
     def __getitem__(self, label):
         return self.labels[label]
 
-# Cell
+
 def get_rico_imgs(path, n = None):
     rico_path = path/'rico-images/data'
     img_paths = sorted(rico_path.glob('*.jpg'))
@@ -138,115 +129,7 @@ def get_rico_imgs(path, n = None):
 
     return [Image.open(img) for img in random.sample(img_paths, n)]
 
-# Cell
-def read_video_data(file_path):
-    with open(file_path) as csv_file:
-        csv_reader = csv.DictReader(csv_file, delimiter=';')
-        data = list(csv_reader)
 
-        idx_data = {}
-        apps, bugs, app_bugs, users = set(), set(), set(), set()
-        for row in data:
-            app = row['app']
-            bug = row['bug']
-            app_bug = row['app_bug']
-            user = row['final_assignment']
-
-            apps.add(app)
-            bugs.add(bug)
-            app_bugs.add(app_bug)
-            users.add(user)
-
-            if app not in idx_data:
-                idx_data[app] = {}
-            bugs_for_app = idx_data[app]
-            if bug not in bugs_for_app:
-                bugs_for_app[bug] = []
-            users_for_bug = bugs_for_app[bug]
-            users_for_bug.append((user, app_bug + "-" + user))
-
-    result = {
-        'idx_data': idx_data,
-        'apps': apps,
-        'bugs': bugs,
-        'app_bugs': app_bugs,
-        'users': users,
-        'data': data,
-    }
-    return result
-
-def get_non_duplicate_corpus(bugs, bug_idx, app_bugs, br_idx, bugs_to_exclude=[]):
-    if bug_idx == 0:
-        other_bugs = bugs[bug_idx + 1:len(bugs)]
-    elif bug_idx == len(bugs) - 1:
-        other_bugs = bugs[0:bug_idx]
-    else:
-        other_bugs = bugs[bug_idx + 1:len(bugs)]
-        other_bugs.extend(bugs[0:bug_idx])
-
-    assert len(other_bugs) == 9, "The list of non-duplicate bugs is different than 9"
-    # print(other_bugs)
-    bug_reports = []
-    for bug in other_bugs:
-        if bug not in bugs_to_exclude:
-            bug_report = app_bugs[bug][br_idx]
-            bug_reports.append(bug_report[1])
-    return bug_reports
-
-def generate_setting2(data, out_path):
-    Path(out_path).mkdir(parents=True, exist_ok=True)
-    apps = data['apps']
-    idx_data = data['idx_data']
-
-    retrieval_runs = []
-    run_id = 1
-
-    # for each app
-    for app in apps:
-
-        app_data = idx_data[app]
-        pprint.pprint(app_data)
-
-        # for each bug
-        bugs = list(idx_data[app].keys())
-        for bug_idx in range(len(bugs)):
-            bug = bugs[bug_idx]
-            bug_reports = idx_data[app][bug]
-
-            # for each other bug
-            other_bugs_idxes = [i for i in range(len(bugs)) if i != bug_idx]
-            for bug_idx2 in other_bugs_idxes:
-
-                next_bug = bugs[bug_idx2]
-                next_bug_reports = idx_data[app][next_bug]
-
-                # for each bug report
-                for br_idx in range(3):
-                    query = bug_reports[br_idx][1]
-
-                    duplicate_corpus = [bug_reports[(br_idx + 1) % 3][1], bug_reports[(br_idx + 2) % 3][1]]
-                    ground_truth = duplicate_corpus.copy()
-                    duplicate_corpus.extend([l[1] for l in next_bug_reports])
-
-                    # for each user
-                    for br_idx2 in range(3):
-                        # get the non-duplicate corpus for each user and all other bugs except current one
-                        non_duplicate_corpus = get_non_duplicate_corpus(bugs, bug_idx, app_data, br_idx2, [next_bug])
-
-                        retrieval_job = {
-                            'run_id': run_id,
-                            'query': query,
-                            'corpus_size': len(duplicate_corpus) + len(non_duplicate_corpus),
-                            'dup_corpus': duplicate_corpus,
-                            'non_dup_corpus': non_duplicate_corpus,
-                            'gnd_trh': ground_truth
-                        }
-                        run_id += 1
-                        retrieval_runs.append(retrieval_job)
-
-    write_json_line_by_line(retrieval_runs, out_path/'setting2.json')
-
-# Cell
 def get_all_texts(vid_ds, out_path, fps):
     Path(out_path).mkdir(parents=True, exist_ok=True)
 
