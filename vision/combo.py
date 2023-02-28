@@ -10,8 +10,8 @@ import pandas as pd
 
 from collections import OrderedDict
 from pathlib import Path
-from eval_basic import *
-from utils_tango import *
+from eval import *
+from utils import *
 
 
 def execute_retrieval_run(run, similarities):

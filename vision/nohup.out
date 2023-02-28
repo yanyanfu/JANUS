@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "cli.py", line 83, in <module>
+    art_path/"videos", fr = None
+  File "/scratch/projects/yyan/DINO/JANUS/vision/prep.py", line 104, in from_path
+    videos.append(Video(vid_path, fr = fr, overwrite = overwrite))
+  File "/scratch/projects/yyan/DINO/JANUS/vision/prep.py", line 41, in __init__
+    self.fr = eval(ffmpeg.probe(vid_path)["streams"][0]["avg_frame_rate"])
+  File "/home/yanfu/anaconda3/envs/dino/lib/python3.6/site-packages/ffmpeg/_probe.py", line 20, in probe
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  File "/home/yanfu/anaconda3/envs/dino/lib/python3.6/subprocess.py", line 729, in __init__
+    restore_signals, start_new_session)
+  File "/home/yanfu/anaconda3/envs/dino/lib/python3.6/subprocess.py", line 1318, in _execute_child
+    part = os.read(errpipe_read, 50000)
+KeyboardInterrupt

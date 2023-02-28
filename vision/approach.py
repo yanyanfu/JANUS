@@ -11,14 +11,13 @@ from collections import defaultdict, OrderedDict
 from itertools import combinations, combinations_with_replacement, permutations
 from joblib import Parallel, delayed
 from pathlib import Path
-from eval_basic import *
+from eval import *
 from features import *
-from model import *
 from prep import *
 from tqdm.auto import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Cell
+
 def flatten_dict(d_in, d_out, parent_key):
     for k, v in d_in.items():
         if isinstance(v, dict):
@@ -26,25 +25,7 @@ def flatten_dict(d_in, d_out, parent_key):
         else:
             d_out[parent_key + (k,)] = v
 
-# Cell
-# def gen_extracted_features(vid_ds, mdl, fps, ftk):
-#     vid_ds_features = {}
-#     for app in tqdm(vid_ds.labels):
-#         start = time.time()
-#         vid_ds_features[app] = {}
-#         for bug in vid_ds[app]:
-#             vid_ds_features[app][bug] = {}
-#             for report in vid_ds[app][bug]:
-#                 vid_ds_features[app][bug][report] = {
-#                     'features': extract_features(vid_ds[app][bug][report], mdl, ftk)
-#                 }
-#         end = time.time()
-#         vid_ds_features[app]['elapsed_time'] = end - start
 
-#     return vid_ds_features
-
-
-# Cell
 def gen_extracted_features(vid_ds, mdl, fps, ftk):
     vid_ds_features = {}
     for app in tqdm(vid_ds.labels):
@@ -61,7 +42,7 @@ def gen_extracted_features(vid_ds, mdl, fps, ftk):
 
     return vid_ds_features
 
-# Cell
+
 def gen_tfidfs(vid_ds_features, vw, codebook, df, ftk):
     vid_tfids = defaultdict(
         lambda: defaultdict(dict)
@@ -79,7 +60,7 @@ def gen_tfidfs(vid_ds_features, vw, codebook, df, ftk):
 
     return vid_tfids
 
-# Cell
+
 def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw, ftk):
     results = defaultdict(
         lambda: defaultdict(
@@ -107,7 +88,7 @@ def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw, ftk):
 
     return df, results
 
-# Cell
+
 # Modified from geeksforgeeks: https://www.geeksforgeeks.org/longest-common-substring-dp-29/
 def fuzzy_LCS(X, Y, m, n, sim_func, codebook, df, vw, mdl_frame_threshold = 0.0):
     LCSuff = [[0 for k in range(n + 1)] for l in range(m + 1)]
@@ -145,7 +126,7 @@ def fuzzy_LCS(X, Y, m, n, sim_func, codebook, df, vw, mdl_frame_threshold = 0.0)
         max_v -= 1
     return result / min(m, n), result_weighted / sum_w
 
-# Cell
+
 def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func, codebook, df, vw, ftk):
     results = defaultdict(
         lambda: defaultdict(
@@ -180,7 +161,7 @@ def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func, codebook, df, vw, ftk)
 
     return results
 
-# Cell
+
 def fix_sims(vid_sims, vid_ds):
     for sim_type in vid_sims:
         for app in vid_sims[sim_type]:
@@ -192,7 +173,7 @@ def fix_sims(vid_sims, vid_ds):
 
     return vid_sims
 
-# Cell
+
 def sort_rankings(vid_sims):
     sorted_rankings = {}
     for sim_type in vid_sims:
@@ -212,7 +193,7 @@ def sort_rankings(vid_sims):
 
     return sorted_rankings
 
-# Cell
+
 def approach(
     vid_ds, vid_ds_features, bovw_vid_ds_sims, lcs_vid_ds_sims, sim_func, codebook, df, vw, fps = 30, ftk = 1
 ):
@@ -260,7 +241,7 @@ def approach(
     rankings = sort_rankings(fixed_vid_ds_sims)
     return rankings
 
-# Cell
+
 def compute_sims(q_vid, vid_ds, model, codebook, vw, fps, ftk):
     df = np.histogram(codebook.labels_, bins = range(vw + 1))[0]
 

@@ -73,6 +73,7 @@ def get_transforms_dino(size=224):
         imagenet_normalize_transform()
     ])
 
+
 class SimCLRExtractor(Extractor):
     
     '''Exposed CNNExtractor class used for retrieving features.'''
@@ -96,7 +97,7 @@ class DinoExtractor(Extractor):
 
     def extract(self, img):
         '''Given an image, extract features from the layers of a CNN. Returns the feature vector.'''
-
+        img = self.transforms(img).float()
         intermediate_output = self.extractor.get_intermediate_layers(img.unsqueeze(0), n=1)
         features = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
         features = torch.cat((features.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
@@ -140,7 +141,7 @@ def gen_vcodebook(path, img_paths, model_name, extractor, vwords):
 
     return codebooks
 
-# Cell
+
 def gen_codebooks(path, models, vwords, samples = 15_000):
 
     rico_path = Path("/scratch/projects/yyan/DINO/data/version_sort_img/sample_3")
@@ -152,7 +153,6 @@ def gen_codebooks(path, models, vwords, samples = 15_000):
         pickle.dump(codebook, open(fname, 'wb'))
 
 
-# Cell
 def get_df(imgs, extractor, codebook, vwords):
     """Generates the document frequency for the visual words"""
     arr = []
@@ -164,7 +164,7 @@ def get_df(imgs, extractor, codebook, vwords):
 
     return np.histogram(arr, bins = range(vwords + 1))
 
-# Cell
+
 def get_bovw(vid_path, extractor, codebook, vwords, n = None):
     """Generates the bag of visual words (bovw) for an entire video."""
     vid = cv2.VideoCapture(str(vid_path))
@@ -196,7 +196,6 @@ def extract_features(vid, extractor, fps = 30, frames_to_keep = 5):
     return extracted_features
 
 
-# Cell
 def new_get_bovw(features, codebook, vwords):
     bovw = []
     for f in features:
@@ -207,7 +206,7 @@ def new_get_bovw(features, codebook, vwords):
     bovw = np.histogram(bovw, bins = range(vwords + 1))[0]
     return bovw
 
-# Cell
+
 def calc_tf_idf(tfs, dfs):
     tf_idf = np.array([])
     for tf, df in zip(tfs, dfs):

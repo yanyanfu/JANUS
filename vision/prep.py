@@ -18,23 +18,10 @@ import pandas as pd
 from collections import defaultdict, OrderedDict
 from pathlib import Path
 from PIL import Image
-from DINO.JANUS.vision.utils2 import *
+from utils import *
 from shutil import copyfile
 from tqdm.auto import tqdm
 
-def get_rand_imgs(vid_path, max_msecs, n = 10):
-    vid = cv2.VideoCapture(str(vid_path))
-
-    imgs = []
-    while len(imgs) < n:
-        msec = random.randrange(1_000, max_msecs, 1_000)
-        vid.set(cv2.CAP_PROP_POS_MSEC, msec)
-
-        success, img = vid.read()
-        if success:
-            imgs.append(img)
-
-    return imgs
 
 def vid_from_frames(frames, output = None, fr = 30):
     """Generate video from list of frame paths."""
