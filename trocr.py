@@ -12,7 +12,7 @@ import argparse
 import lanms
 import model
 import prep
-import utils_tango
+import utils
 
 import numpy as np
 import tensorflow as tf
@@ -113,12 +113,11 @@ def sort_poly(p):
         return p[[0, 3, 2, 1]]
 
 
-def main(argv=None):
+def get_text(vid_ds, text_path, ftk):
     import os
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    text_path = Path(args.art_path) / 'models' / 'text'
     checkpoint_path = text_path / 'east_icdar2015_resnet_v1_50_rbox'
     output_dir = text_path / 'Lucene'/ 'extracted_txt'
 
@@ -145,13 +144,13 @@ def main(argv=None):
 
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             ckpt_state = tf.train.get_checkpoint_state(checkpoint_path)
+            print(checkpoint_path)
             model_path = os.path.join(checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
             saver.restore(sess, model_path)
 
-            video_output_path = os.path.join(output_dir, "text2_" + str(args.fps))
+            video_output_path = os.path.join(output_dir, "text_" + str(ftk))
             Path(video_output_path).mkdir(parents=True, exist_ok=True)
 
-            vid_ds = prep.VideoDataset.from_path(Path(args.art_path)/"videos").label_from_paths()
             videos = [vid.vid_path for vid in vid_ds.videos]
 
             for video_path in videos:
@@ -160,15 +159,15 @@ def main(argv=None):
                 video_name = file_name + "-" + str(video_path_obj.parent.parent.parent.stem)
 
                 out_file = os.path.join(video_output_path, video_name + '.json')
-                frame_path = os.path.join(output_dir, "frames_" + str(args.fps), video_name)
+                frame_path = os.path.join(output_dir, "frames_" + str(ftk), video_name)
                 Path(frame_path).mkdir(parents=True, exist_ok=True)
 
-                frames = utils_tango.find_file("*.jpeg", frame_path)
+                frames = utils.find_file("*.jpeg", frame_path)
                 if not frames:
-                    utils_tango.extract_frames(video_path_obj, frame_path, args.fps)
-                frames = utils_tango.find_file("*.jpeg", frame_path)
+                    utils.extract_frames(video_path_obj, frame_path, ftk)
+                frames = utils.find_file("*.jpeg", frame_path)
                 
-                frames = utils_tango.find_file("*.jpeg", frame_path)
+                frames = utils.find_file("*.jpeg", frame_path)
 
                 frames_text = []
                 for frame in tqdm(frames):
@@ -188,7 +187,7 @@ def main(argv=None):
                         boxes[:, :, 1] /= ratio_h
 
                         for box in boxes:
-                            if np.linalg.norm(box[0] - box[1]) < 40 or np.linalg.norm(box[3]-box[0]) < 20:
+                            if np.linalg.norm(box[0] - box[1]) < 80 or np.linalg.norm(box[3]-box[0]) < 40:
                                 continue                  
                             #apply padding to each side of the bounding box, respectively
                             dX = (box[2,0] - box[0,0]) * 0.03
@@ -219,20 +218,6 @@ def main(argv=None):
                         frames_text.append(record)
 
                 frames_text = sorted(frames_text, key=lambda t: t["f"])
-                utils_tango.write_json_line_by_line(frames_text, out_file)
+                utils.write_json_line_by_line(frames_text, out_file)
                 print("done: " + video_name)
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    ## Required parameters
-    parser.add_argument("--art_path", default='../../JANUS_reproduction_package/artifacts', type=str, required=False,
-                        help="The artifact path.")
-    parser.add_argument("--fps", default=5, type=int, required=False,
-                        help="Frame rate")
-    
-    #print arguments
-    args = parser.parse_args()
-
-    tf.app.run()

@@ -11,7 +11,7 @@ All the data related to the benchmark and the approach itself is provided in [Ze
 * The generated codebooks and the DINO checkpoint fine-tuned on Rico dataset for visual JANUS are in the artifacts/models/vision folder
 * The needed east checkpoint and the extracted text based on EAST & TrOCR can be found in the artifacts/models/text folder 
 * The evaluation setting corresponding to 7,290 tasks is provided in the outputs/evaluation_settings folder
-* All the results for visual, textual and combined JANUS are located in the outputs folder
+* All the results for the visual, textual and combined JANUS are located in the outputs folder
 
 ## Training Prerequisites
 - CUDA 11.0
@@ -25,5 +25,11 @@ All the data related to the benchmark and the approach itself is provided in [Ze
 git clone https://anonymous.4open.science/r/JANUS-A0FB/
 cd JANUS
 pip install -r requirements.txt
+```
+
+## Reproduce the results
+
+```bash
+python cli.py
 ```
 

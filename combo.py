@@ -80,15 +80,12 @@ def write_rankings(output_path, rankings):
     Path(output_path).mkdir(parents=True, exist_ok=True)
     all_rankings = []
     for setting in rankings:
-        write_json_line_by_line(rankings[setting], os.path.join(output_path, setting + '.csv'))
+        # write_json_line_by_line(rankings[setting], os.path.join(output_path, setting + '.csv'))
         all_rankings.extend(rankings[setting])
     write_json_line_by_line(all_rankings, os.path.join(output_path, 'all_rankings.csv'))
 
-# Cell
-def convert_results_format(sim_path, settings_path, out_path, models):
-    similarities_path = sim_path
-    # output_results = out_path/"user_results_weighted_all"
-    # output_rankings = out_path/"user_rankings_weighted_all"
+
+def convert_results_format(out_path, settings_path, model):
     techniques = ["weighted_lcs", "bovw", "lcs", "bovw_lcs", "bovw_weighted_lcs"]
     systems_allowed = []
 
@@ -102,38 +99,37 @@ def convert_results_format(sim_path, settings_path, out_path, models):
         all_results[setting] = []
         all_rankings[setting] = []
 
-    for model in models:
-        print (os.path.join(similarities_path, model))
-        sim_files = find_file("rankings_*.pkl", os.path.join(similarities_path, model))
-        print (sim_files)
-        for sim_file in sim_files:
-            file_name = ntpath.basename(sim_file).split(".")[0]
-            file_tokens = file_name.split("_")
+    sim_files = find_file("rankings_*.pkl", out_path)
+    print(out_path)
+    for sim_file in sim_files:
+        print(sim_file)
+        file_name = ntpath.basename(sim_file).split(".")[0]
+        file_tokens = file_name.split("_")
 
-            vwords = file_tokens[3]
-            frames_per_sec = file_tokens[4]
-            ftk = file_tokens[5]
+        vwords = file_tokens[3]
+        frames_per_sec = file_tokens[4]
+        ftk = file_tokens[5]
 
-            model_similarities = pickle.load(open(sim_file, 'rb'))
+        model_similarities = pickle.load(open(sim_file, 'rb'))
 
-            for technique in techniques:
-                print(model_similarities.keys())
-                similarities = model_similarities[technique]
-                configuration = {
-                    "model": model,
-                    "vwords": vwords,
-                    "fps": frames_per_sec,
-                    "ftk": ftk,
-                    "technique": technique
-                }
+        for technique in techniques:
+            print(model_similarities.keys())
+            similarities = model_similarities[technique]
+            configuration = {
+                "model": model,
+                "vwords": vwords,
+                "fps": frames_per_sec,
+                "ftk": ftk,
+                "technique": technique
+            }
 
-                print("Running config: ", configuration)
+            print("Running config: ", configuration)
 
-                results, rankings = run_settings(settings, similarities, configuration, systems_allowed)
+            results, rankings = run_settings(settings, similarities, configuration, systems_allowed)
 
-                for setting in settings:
-                    all_results[setting].extend(results[setting])
-                    all_rankings[setting].extend(rankings[setting])
+            for setting in settings:
+                all_results[setting].extend(results[setting])
+                all_rankings[setting].extend(rankings[setting])
 
     print("Writing results and rankings")
 
@@ -143,7 +139,7 @@ def convert_results_format(sim_path, settings_path, out_path, models):
     print("done")
 
 
-# Cell
+
 def get_info_to_ranking_results(ranking, ranking_results, run, dl_model, ir_model, weight_str, setting):
     new_model = dl_model[0] + "-" + ir_model[0]
     new_vwords = dl_model[1]
@@ -174,17 +170,11 @@ def get_info_to_ranking_results(ranking, ranking_results, run, dl_model, ir_mode
 
     return ranking_info, ranking_results
 
-# Cell
-def tango_combined(
+
+def combined(
     out_path, dl_rankings_path, ir_rankings_path,
     settings_path, dl_models, ir_models
 ):
-    # all_data
-    results_out_path = out_path/"tango_comb_results"
-    rankings_out_path = out_path/"tango_comb_rankings"
-
-    Path(results_out_path).mkdir(parents=True, exist_ok=True)
-    Path(rankings_out_path).mkdir(parents=True, exist_ok=True)
 
     # read data
     settings = load_settings(settings_path)
@@ -194,15 +184,12 @@ def tango_combined(
                                                                     rec['technique'],))
 
     ir_rankings = read_json(ir_rankings_path)
-    ir_rankings_by_config = group_dict(ir_rankings, lambda rec: (rec['model'], rec['fps'] + "ftk",
+    ir_rankings_by_config = group_dict(ir_rankings, lambda rec: (rec['model'], rec['fps'] + 'ftk',
                                                                     rec['technique'],))
 
 
     ir_model_apps_for_comb = {
-        "1ftk-all_text": ['APOD', 'DROID', 'GNU', 'GROW'],
-        "5ftk-all_text": ['APOD', 'DROID', 'GNU', 'GROW'],
-        "5ftk-unique_frames": ['APOD', 'DROID', 'GROW'],
-        "5ftk-unique_words": ['APOD', 'GROW'],
+        "5ftk-all_text": ['APOD', 'DROID', 'GNU', 'GROW', 'FCS', 'ITP', 'GPS'],
     }
 
     settings_to_run = ["setting2"]
@@ -240,6 +227,7 @@ def tango_combined(
                     ir_run_ranking = dict(
                         zip((rec["docName"] for rec in ir_run_ranking), (rec for rec in ir_run_ranking)))
                     dl_run_ranking = dl_runs[run_id][0]["ranking"]
+
 
                     # rankings based on all weights
                     for weight in np.arange(0, 1.1, 0.1):
@@ -304,9 +292,8 @@ def tango_combined(
                         all_new_rankings.append(ranking_info)
 
     print("--- %s seconds ---" % (time.time() - start_time))
-
     print("Writing data")
 
-    pd.read_json(json.dumps(all_new_results)).to_csv(os.path.join(results_out_path, 'all_results.csv'),
+    pd.read_json(json.dumps(all_new_results)).to_csv(os.path.join(out_path, 'all_results.csv'),
                                                      index=False, sep=";")
-    write_json_line_by_line(all_new_rankings, os.path.join(rankings_out_path, 'all_rankings.json'))
+    write_json_line_by_line(all_new_rankings, os.path.join(out_path, 'all_rankings.json'))
