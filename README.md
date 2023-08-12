@@ -1,7 +1,7 @@
-# JANUS: Enhanced Duplicate Detection for Video-based Bug reports from Two Modalities
+# Semantic GUI Scene Learning and Video Alignment for DetectingDuplicate Video-based Bug Reports
 
 ## Introduction
-This is the official codebase for the approach "A Tale of Learning from Two Modalities: Enhanced Duplicate Detection for Video-based Bug Reports"
+This is the official codebase for the approach "Semantic GUI Scene Learning and Video Alignment for DetectingDuplicate Video-based Bug Reports"
 
 ## Results
 
