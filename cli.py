@@ -70,10 +70,11 @@ def get_avg_vision_results(out_path):
 def get_vis_results (vid_ds, model_path, out_path):
     ckpt_path = model_path / 'dino_rico_ckpt' / 'checkpoint.pth'
     settings_path = out_path / 'evaluation_settings'
+    model_arch = 'vit_small'
 
-    dino = vits.__dict__["vit_base"](args.patch_size, num_classes=0)
+    dino = vits.__dict__[model_arch](args.patch_size, num_classes=0)
     dino.eval()
-    utils.load_pretrained_weights(dino, ckpt_path, "teacher", "vit_base", args.patch_size)
+    utils.load_pretrained_weights(dino, ckpt_path, "teacher", model_arch, args.patch_size)
     model = features.DinoExtractor (dino)
 
     sim_func = vits.frame_sim
@@ -135,16 +136,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     art_path = Path(args.repro_path) / 'artifacts'
-    out_path = Path(args.repro_path) / 'outputs'
+    out_path = Path(args.repro_path) / 'outputs' / 'test'
 
     vid_ds = prep.VideoDataset.from_path(
         art_path/"videos", fr = None
     ).label_from_paths()
 
-    # get_vis_results (vid_ds, art_path / 'models' / 'vision', out_path)
-    get_txt_results (art_path / 'models' / 'text', out_path / 'evaluation_settings')
+    get_vis_results (vid_ds, art_path / 'models' / 'vision', out_path)
+    # get_txt_results (art_path / 'models' / 'text', out_path / 'evaluation_settings')
     
-    ir_ranking_path = out_path / 'text' / 'all_rankings.json'
-    dl_ranking_path = out_path / 'vision' / 'avg' / 'average_rankings.json'
-    settings_path = out_path / 'evaluation_settings'
-    combo.combined(out_path / 'combined', dl_ranking_path, ir_ranking_path, settings_path, "Dino-1000vw-5ftk-bovw", "east_trocr-5ftk-all_text")
+    # ir_ranking_path = out_path / 'text' / 'all_rankings.json'
+    # dl_ranking_path = out_path / 'vision' / 'avg' / 'average_rankings.json'
+    # settings_path = out_path / 'evaluation_settings'
+    # combo.combined(out_path / 'combined', dl_ranking_path, ir_ranking_path, settings_path, "Dino-1000vw-5ftk-bovw", "east_trocr-5ftk-all_text")

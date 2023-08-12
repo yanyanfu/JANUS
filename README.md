@@ -3,6 +3,17 @@
 ## Introduction
 This is the official codebase for the approach "A Tale of Learning from Two Modalities: Enhanced Duplicate Detection for Video-based Bug Reports"
 
+## Results
+
+### Visual
+
+![image_1](tabels/visual.png)
+![image_2](tabels/visual_config.png)
+
+### textual
+![image_3](tabels/text.png)
+![image_4](tabels/text_comparison.png)
+
 ## Data
 
 All the data related to the benchmark and the approach itself is provided in [Zendo](https://sandbox.zenodo.org/record/1166765#.Y_Y4CexBx8Y).

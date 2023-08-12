@@ -95,7 +95,7 @@ class DinoExtractor(Extractor):
         super().__init__(extractor)
         self.transforms = get_transforms_dino()
 
-    def extract(self, img):
+    def extract_CLS(self, img):
         '''Given an image, extract features from the layers of a CNN. Returns the feature vector.'''
         img = self.transforms(img).float()
         intermediate_output = self.extractor.get_intermediate_layers(img.unsqueeze(0), n=1)
@@ -103,6 +103,21 @@ class DinoExtractor(Extractor):
         features = torch.cat((features.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
         features = features.reshape(features.shape[0], -1).detach().numpy()
         return features
+
+    def extract_like_copy_detection(self, img):
+        '''Given an image, extract features from the layers of a CNN. Returns the feature vector.'''
+        img = self.transforms(img).float()
+        samples = img.unsqueeze(0)
+        feats = self.extractor.get_intermediate_layers(samples.unsqueeze(0), n=1)[0].clone()
+        cls_output_token = feats[:, 0, :]  #  [CLS] token
+        b, h, w, d = len(samples), int(samples.shape[-2] / model.patch_embed.patch_size), int(samples.shape[-1] / model.patch_embed.patch_size), feats.shape[-1]
+        feats = feats[:, 1:, :].reshape(b, h, w, d)
+        feats = feats.clamp(min=1e-6).permute(0, 3, 1, 2)
+        feats = nn.functional.avg_pool2d(feats.pow(4), (h, w)).pow(1. / 4).reshape(b, -1)
+        # concatenate [CLS] token and GeM pooled patch tokens
+        feats = torch.cat((cls_output_token, feats), dim=1)
+        
+        return feats
 
 
 def gen_vcodebook(path, img_paths, model_name, extractor, vwords):
