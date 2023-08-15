@@ -7,7 +7,7 @@ This is the official codebase for the approach "Semantic GUI Scene Learning and 
 
 ### Visual
 
-We compared JANUS(visual) with the baseline TANGO(visual) by experimenting with two ViT models: ViT-Small (ViT-S) and ViT-Base (ViT-B). Although ViT-S has a similar model size to RestNet-50: ~23M parameters, the ViT-S (used by JANUS's DINO) outperform ResNet-50 (used by TANGO's SimCLR) with statistical significance ** on duplicate video-based bug report detection. 
+We compared JANUS(visual) with the baseline TANGO(visual) by experimenting with two ViT models: ViT-Small (ViT-S) and ViT-Base (ViT-B). Although ViT-S has a similar model size to RestNet-50: ~23M parameters, the ** ViT-S (used by JANUS's DINO) outperform ResNet-50 (used by TANGO's SimCLR) with statistical significance ** on duplicate video-based bug report detection. 
 
 <img src="tabels/visual.png" alt="visual results" width="720">
 
