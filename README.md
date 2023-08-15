@@ -7,8 +7,14 @@ This is the official codebase for the approach "Semantic GUI Scene Learning and 
 
 ### Visual
 
-<img src="tabels/visual.png" alt="visual results" width="320">
-![image_2](tabels/visual_config.png)
+We compared JANUS(visual) with baseline TANGO(visual) by experimenting with two ViT models: ViT-Small (ViT-S) and ViT-Base (ViT-B). * ViT-S has a similar size to RestNet-50's size (used by TANGO's SimCLR): ~23M parameters *. We also experimented with the following patch sizes for ViT: $16 x 16$ (/16) and $8 x 8$ (/8) pixels, as the patch size can affect JANUS performance. It is worth noting that both * ViT-S/16 and ViT-S/8 used by JANUS's DINO outperform ResNet-50 used by TANGO's SimCLR with statistical significance * even though the model size of ViT-S is comparable to ResNet-50. 
+
+<img src="tabels/visual.png" alt="visual results" width="640">
+
+The following table shows the network configurations and primary hyperparameters used by TANGO(visual) and JANUS(visual).
+
+<img src="tabels/visual_config.png" alt="visual results" width="320">
+
 
 ### textual
 ![image_3](tabels/text.png)
