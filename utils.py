@@ -189,6 +189,12 @@ def adapt_input_conv(in_chans, conv_weight):
     return conv_weight
 
 
+def format_str(string):
+    for char in ['\n\f', '\n\x0c', '\r\n', '\r', '\n', ]:
+        string = string.replace(char, ' ')
+    return string
+
+
 def trunc_normal_(tensor, mean=0., std=1., a=-2., b=2.):
     # type: (Tensor, float, float, float, float) -> Tensor
     return _no_grad_trunc_normal_(tensor, mean, std, a, b)

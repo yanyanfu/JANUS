@@ -20,7 +20,8 @@ import tensorflow as tf
 import tensorflow.compat.v1 as tf
 
 from pathlib import Path
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+
 
 
 def get_avg_vision_results(out_path):
@@ -86,15 +87,14 @@ def get_vis_results (vid_ds, model_path, out_path):
         codebook = pickle.load(open(cb_path, "rb"))
         vid_ds_features = approach.gen_extracted_features(vid_ds, model, FPS, ftk)
 
-        df, bovw_vid_ds_sims = approach.gen_bovw_similarity(
-            vid_ds, vid_ds_features, codebook, vw, ftk
+        bovw_vid_ds_sims = approach.gen_bovw_similarity(
+            vid_ds, vid_ds_features, codebook, vw
         )
         lcs_vid_ds_sims = approach.gen_lcs_similarity(
-            vid_ds, vid_ds_features, sim_func, codebook, df, vw, ftk
+            vid_ds, vid_ds_features, sim_func
         )
         rankings = approach.approach(
-            vid_ds, vid_ds_features, bovw_vid_ds_sims, lcs_vid_ds_sims, sim_func,
-            codebook, df, vw, fps = FPS, ftk = ftk,
+            vid_ds, vid_ds_features, bovw_vid_ds_sims, lcs_vid_ds_sims
         )       
 
         id_name = f"user_{args.n_imgs}n_{vw}vw_{FPS}fps_{ftk}ftk"
@@ -105,15 +105,29 @@ def get_vis_results (vid_ds, model_path, out_path):
         get_avg_vision_results (out_path)
 
 
-def get_txt_results (txt_path, setting_path):
-    engine_path = txt_path / 'Lucene'
-    if not (engine_path / 'extracted_txt' / f"text_{args.ftk}").exists():
+def get_txt_results (txt_path, out_path):
+    engine_path = txt_path / 'text'/ 'Lucene'
+    output_txt_path = engine_path / 'extracted_txt' / f"text_{args.ftk}"
+    if not output_txt_path.exists():
         trocr.get_text(vid_ds, txt_path, args.ftk)
     subprocess.check_output(
-        ["sh", "build_run.sh", str('./extracted_txt'), str(setting_path)],
+        ["sh", "build_run.sh", str('./extracted_txt'), str(out_path / 'evaluation_settings')],
         cwd=str(engine_path),
     )
 
+    out_seq_path = out_path / 'text'/ 'seq'
+    sim_func = vits.frame_sim
+    all_text_vec = approach.get_text_features (output_txt_path, 'all_text')
+    all_text_vec_frame = approach.get_text_frame_features (output_txt_path)
+    text_sim = approach.gen_text_similarity(vid_ds, all_text_vec)
+    lcs_vid_ds_sims = approach.gen_lcs_text_similarity(vid_ds, all_text_vec_frame, sim_func)         
+    rankings = approach.approach(vid_ds, text_sim, lcs_vid_ds_sims)       
+
+    FPS, ftk, vw = args.FPS, args.ftk, args.vw
+    id_name = f"user_{args.n_imgs}n_{vw}vw_{FPS}fps_{ftk}ftk"       
+    with open(out_seq_path / f"rankings_{id_name}.pkl", "wb") as f:
+        pickle.dump(rankings, f, protocol=pickle.HIGHEST_PROTOCOL)
+    combo.convert_results_format(out_seq_path, out_path / 'evaluation_settings', "east_trocr")
 
 
 if __name__ == '__main__':
@@ -136,16 +150,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     art_path = Path(args.repro_path) / 'artifacts'
-    out_path = Path(args.repro_path) / 'outputs' / 'test'
+    out_path = Path(args.repro_path) / 'outputs'
 
     vid_ds = prep.VideoDataset.from_path(
         art_path/"videos", fr = None
     ).label_from_paths()
 
     get_vis_results (vid_ds, art_path / 'models' / 'vision', out_path)
-    # get_txt_results (art_path / 'models' / 'text', out_path / 'evaluation_settings')
+    get_txt_results (art_path / 'models' / 'text', out_path)
     
-    # ir_ranking_path = out_path / 'text' / 'all_rankings.json'
-    # dl_ranking_path = out_path / 'vision' / 'avg' / 'average_rankings.json'
-    # settings_path = out_path / 'evaluation_settings'
-    # combo.combined(out_path / 'combined', dl_ranking_path, ir_ranking_path, settings_path, "Dino-1000vw-5ftk-bovw", "east_trocr-5ftk-all_text")
+    ir_ranking_path = out_path / 'text' / 'all_rankings.json'
+    dl_ranking_path = out_path / 'vision' / 'avg' / 'average_rankings.json'
+    settings_path = out_path / 'evaluation_settings'
+    combo.combined(out_path / 'combined', dl_ranking_path, ir_ranking_path, settings_path, "Dino-1000vw-5ftk-bovw", "east_trocr-5ftk-all_text")

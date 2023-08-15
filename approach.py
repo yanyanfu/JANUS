@@ -1,9 +1,9 @@
-# Cell
 import copy
 import cv2
 import multiprocessing
 import pickle
 import time
+import utils
 
 import numpy as np
 
@@ -16,6 +16,7 @@ from features import *
 from prep import *
 from tqdm.auto import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def flatten_dict(d_in, d_out, parent_key):
@@ -43,7 +44,63 @@ def gen_extracted_features(vid_ds, mdl, fps, ftk):
     return vid_ds_features
 
 
-def gen_tfidfs(vid_ds_features, vw, codebook, df, ftk):
+def get_text_features(txt_path, strategy):
+    text = json.load(open(txt_path + '/' + strategy + '/preprocessed_docs.json', 'r'))
+    all_text = defaultdict(lambda: defaultdict(defaultdict))
+    all_text_vec = defaultdict(lambda: defaultdict(defaultdict))
+
+    for br in text:
+        app, bug, report = br.split('-')
+        all_text[app][bug][report] = text[br]['docText']
+    
+    for app in all_text:
+        cnt = 0
+        corpus = []
+        vectorizer = TfidfVectorizer()
+        for bug in all_text[app]:
+            for report in all_text[app][bug]:              
+                corpus.append(all_text[app][bug][report])
+        text_vec = vectorizer.fit_transform(corpus).toarray()
+        for bug in all_text[app]:
+            for report in all_text[app][bug]: 
+                all_text_vec[app][bug][report] = text_vec[cnt]
+                cnt += 1
+            
+    return all_text_vec
+
+
+def get_text_frame_features(txt_path):
+    all_text_files = list(txt_path.glob('*.json'))
+    all_text = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    all_text_vec = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
+    for text_file in all_text_files:
+        texts = utils.read_json_line_by_line(text_file)
+        br = str(text_file).split('/')[-1][:-5]
+        app, bug, report = br.split('-')
+        for text in texts:
+            all_text[app][bug][report].append(utils.format_str(text['txt']))
+    
+    for app in all_text:
+        cnt = 0
+        corpus = []
+        vectorizer = TfidfVectorizer()
+        for bug in all_text[app]:
+            for report in all_text[app][bug]:
+                for frame in all_text[app][bug][report]:
+                    corpus.append(frame)
+        text_vec = vectorizer.fit_transform(corpus).toarray()
+        for bug in all_text[app]:
+            for report in all_text[app][bug]: 
+                for frame in all_text[app][bug][report]:
+                    tmp = [text_vec[cnt].tolist()]
+                    all_text_vec[app][bug][report].append(tmp)
+                cnt += 1
+            
+    return all_text_vec
+
+
+def gen_tfidfs(vid_ds_features, vw, codebook, df):
     vid_tfids = defaultdict(
         lambda: defaultdict(dict)
     )
@@ -61,7 +118,7 @@ def gen_tfidfs(vid_ds_features, vw, codebook, df, ftk):
     return vid_tfids
 
 
-def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw, ftk):
+def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw):
     results = defaultdict(
         lambda: defaultdict(
             lambda: defaultdict(
@@ -76,7 +133,7 @@ def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw, ftk):
 
     vid_ds_features = copy.deepcopy(vid_ds_features)
     df = np.histogram(codebook.labels_, bins = range(vw + 1))[0]
-    vid_tfids = gen_tfidfs(vid_ds_features, vw, codebook, df, ftk)
+    vid_tfids = gen_tfidfs(vid_ds_features, vw, codebook, df)
     for app, bugs in vid_ds.labels.items():
         start = time.time()
         l = [(bug, report) for bug in bugs for report in bugs[bug] if bug != 'elapsed_time']
@@ -86,11 +143,61 @@ def gen_bovw_similarity(vid_ds, vid_ds_features, codebook, vw, ftk):
         end = time.time()
         results[app]['elapsed_time'] = end - start + vid_ds_features[app]['elapsed_time']
 
-    return df, results
+    return results
 
+
+def gen_text_similarity(vid_ds, all_text_vec):
+    results = defaultdict(
+        lambda: defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(
+                    lambda: defaultdict(
+                        lambda: defaultdict(float)
+                    )
+                )
+            )
+        )
+    )
+    for app, bugs in vid_ds.labels.items():
+        l = [(bug, report) for bug in bugs for report in bugs[bug]]
+        pairs = list(x for x in combinations_with_replacement(l, 2) if x[0] != x[1])
+        for (bug_i, report_i), (bug_j, report_j) in pairs:
+            results[app][bug_i][report_i][bug_j][report_j]['bow'] = np.dot(all_text_vec[app][bug_i][report_i], all_text_vec[app][bug_j][report_j]) / (np.linalg.norm(all_text_vec[app][bug_i][report_i]) * np.linalg.norm(all_text_vec[app][bug_j][report_j]))
+    return results
+
+
+def gen_lcs_text_similarity(vid_ds, vid_ds_features, sim_func):
+    results = defaultdict(
+        lambda: defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(
+                    lambda: defaultdict(
+                        lambda: defaultdict(float)
+                    )
+                )
+            )
+        )
+    )
+
+    vid_ds_features = copy.deepcopy(vid_ds_features)
+    for app, bugs in vid_ds.labels.items():
+        l = [(bug, report) for bug in bugs for report in bugs[bug] if bug != 'elapsed_time']
+        pairs = list(x for x in combinations_with_replacement(l, 2) if x[0] != x[1])
+        for (bug_i, report_i), (bug_j, report_j) in tqdm(pairs):
+            lcs_sim, weighted_lcs_sim = fuzzy_LCS(
+                vid_ds_features[app][bug_i][report_i],
+                vid_ds_features[app][bug_j][report_j],
+                len(vid_ds_features[app][bug_i][report_i]),
+                len(vid_ds_features[app][bug_j][report_j]),
+                sim_func
+            )
+            results[app][bug_i][report_i][bug_j][report_j]['lcs'] = lcs_sim
+            results[app][bug_i][report_i][bug_j][report_j]['weighted_lcs'] = weighted_lcs_sim
+
+    return results
 
 # Modified from geeksforgeeks: https://www.geeksforgeeks.org/longest-common-substring-dp-29/
-def fuzzy_LCS(X, Y, m, n, sim_func, codebook, df, vw, mdl_frame_threshold = 0.0):
+def fuzzy_LCS(X, Y, m, n, sim_func, mdl_frame_threshold = 0.0):
     LCSuff = [[0 for k in range(n + 1)] for l in range(m + 1)]
     LCSuff_weighted = [[0 for k in range(n + 1)] for l in range(m + 1)]
 
@@ -107,7 +214,7 @@ def fuzzy_LCS(X, Y, m, n, sim_func, codebook, df, vw, mdl_frame_threshold = 0.0)
                 LCSuff_weighted[i][j] = 0
                 continue
 
-            sim = sim_func(X[i - 1], Y[j - 1], codebook, df, vw)
+            sim = sim_func(X[i - 1], Y[j - 1])
             if sim > mdl_frame_threshold:
                 LCSuff[i][j] = LCSuff[i - 1][j - 1] + sim
                 LCSuff_weighted[i][j] = LCSuff_weighted[i - 1][j - 1] + sim * (i / m) * (j / n)
@@ -127,7 +234,7 @@ def fuzzy_LCS(X, Y, m, n, sim_func, codebook, df, vw, mdl_frame_threshold = 0.0)
     return result / min(m, n), result_weighted / sum_w
 
 
-def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func, codebook, df, vw, ftk):
+def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func):
     results = defaultdict(
         lambda: defaultdict(
             lambda: defaultdict(
@@ -151,7 +258,7 @@ def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func, codebook, df, vw, ftk)
                 vid_ds_features[app][bug_j][report_j]['features'],
                 len(vid_ds_features[app][bug_i][report_i]['features']),
                 len(vid_ds_features[app][bug_j][report_j]['features']),
-                sim_func, codebook, df, vw
+                sim_func
             )
             results[app][bug_i][report_i][bug_j][report_j]['lcs'] = lcs_sim
             results[app][bug_i][report_i][bug_j][report_j]['weighted_lcs'] = weighted_lcs_sim
@@ -195,7 +302,7 @@ def sort_rankings(vid_sims):
 
 
 def approach(
-    vid_ds, vid_ds_features, bovw_vid_ds_sims, lcs_vid_ds_sims, sim_func, codebook, df, vw, fps = 30, ftk = 1
+    vid_ds, vid_ds_features, bovw_vid_ds_sims, lcs_vid_ds_sims
 ):
     vid_ds_sims = defaultdict(
         lambda: defaultdict(

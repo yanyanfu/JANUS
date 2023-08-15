@@ -399,6 +399,6 @@ class DINOHead(nn.Module):
         return x
 
 
-def frame_sim(features_i, features_j, codebook, df, vw):
+def frame_sim(features_i, features_j):
     sim = cosine_similarity(features_i, features_j)[0][0]
     return sim
