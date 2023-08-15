@@ -7,7 +7,7 @@ This is the official codebase for the approach "Semantic GUI Scene Learning and 
 
 ### Visual
 
-![image_1](tabels/visual.png)
+<img src="tabels/visual.png" alt="visual results" width="320">
 ![image_2](tabels/visual_config.png)
 
 ### textual
