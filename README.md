@@ -8,6 +8,7 @@ This is the official codebase for the approach "Semantic GUI Scene Learning and 
 <img src="tabels/visual.png" alt="visual results" width="720">
 
 The following table shows the network configurations and primary hyperparameters used by TANGO(visual) and JANUS(visual).
+
 <img src="tabels/visual_config.png" alt="visual results" width="480">
 
 **Textual:** We compared JANUS (textual) against TANGO's textual component by experimenting with different configurations for the EAST and TrOCR models. For EAST, we used three different resolution thresholds to filter out small text regions: 5 x 5 (EAST-5), 40 x 20 (EAST-40), and 80 x 40 (EAST-80). For TrOCR, two fine-tuned TrOCR-Large models are used, namely TrOCR-p (fine-tuned on the printed text dataset SROIE) and  TrOCR-s (finetuned on the synthetic scene text datasets such as ICDAR15 and SVT)
