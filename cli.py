@@ -134,7 +134,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--repro_path", default='/scratch/projects/yyan/DINO/JANUS_reproduction_package', type=str, required=False,
+    parser.add_argument("--repro_path", default='../JANUS_reproduction_package', type=str, required=False,
                         help="The artifact path.")
     parser.add_argument("--ftk", default=5, type=int, required=False,
                         help="Frame rate")
