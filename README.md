@@ -19,7 +19,7 @@ The following table shows the network configurations and primary hyperparameters
 
 ### Data
 
-All the data related to the benchmark and the approach itself is provided in [Zendo](https://sandbox.zenodo.org/record/1166765#.Y_Y4CexBx8Y).
+All the data related to the benchmark and the approach itself is provided in [Zenodo](https://sandbox.zenodo.org/record/1166765#.Y_Y4CexBx8Y).
 
 * The video-based bug reports are located in artifacts/videos folder
 * The generated codebooks and the DINO checkpoint fine-tuned on Rico dataset for visual JANUS are in the artifacts/models/vision folder
@@ -37,9 +37,10 @@ All the data related to the benchmark and the approach itself is provided in [Ze
 
 #### Reproduce the results
 ```bash
-git clone https://anonymous.4open.science/r/JANUS-B65E/
+git clone https://github.com/yanyanfu/JANUS
 cd JANUS
 pip install -r requirements.txt
+cd janus
 python cli.py
 ```
 
