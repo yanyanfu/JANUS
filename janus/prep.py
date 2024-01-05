@@ -109,8 +109,6 @@ class VideoDataset:
         else:
             vid_paths = list(filter(lambda x: "fixed" not in str(x), sorted(path.rglob('*.mp4'))))
             for vid_path in vid_paths:
-                # if 'FCS' in str(vid_path):
-                print(vid_path)
                 videos.append(Video(vid_path, fr = fr, overwrite = overwrite))
 
         return VideoDataset(videos)

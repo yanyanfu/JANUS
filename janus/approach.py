@@ -311,7 +311,7 @@ def approach(
     for app, bugs in vid_ds.labels.items():
         l = [(bug, report) for bug in bugs for report in bugs[bug]]
         pairs = list(x for x in combinations_with_replacement(l, 2) if x[0] != x[1])
-        for (bug_i, report_i), (bug_j, report_j) in tqdm(pairs):
+        for (bug_i, report_i), (bug_j, report_j) in pairs:
             lcs = lcs_vid_ds_sims[app][bug_i][report_i][bug_j][report_j]['lcs']
             weighted_lcs = lcs_vid_ds_sims[app][bug_i][report_i][bug_j][report_j]['weighted_lcs']
             vid_ds_sims['lcs'][app][bug_i][report_i][bug_j][report_j] = lcs
