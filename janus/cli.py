@@ -87,7 +87,7 @@ def get_vis_results (vid_ds, model_arch, patch_size, art_path, out_path):
     utils.load_pretrained_weights(dino, ckpt_path, "teacher", model_arch, args.patch_size)
     model = features.DinoExtractor (dino, model_arch)
 
-    logging.info(f"Extracting visual features based on Dino{str(model_name)}.")
+    logging.info(f"Extracting visual features based on Dino ({str(model_name)}).")
     vid_ds_features = approach.gen_extracted_features(vid_ds, model, FPS, ftk)
  
     for i in range (args.n_cbs):
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--repro_path", default='/scratch/projects/yyan/DINO/JANUS_reproduction_package', type=str, required=False,
+    parser.add_argument("--repro_path", default='/projects/DINO/JANUS_reproduction_package', type=str, required=False,
                         help="The replication package path")
     parser.add_argument('--arch', default='vit_base', type=str, choices=['vit_small', 'vit_base'],
                         help='Name of visual architecture to fine-tune')
@@ -237,10 +237,10 @@ if __name__ == '__main__':
     art_path = Path(args.repro_path) / 'artifacts'
     out_path = Path(args.repro_path) / 'outputs'
 
-    # logging.info("Loading Videos")
-    # vid_ds = prep.VideoDataset.from_path(
-    #     art_path/'videos', fr = None
-    # ).label_from_paths()
+    logging.info("Loading Videos")
+    vid_ds = prep.VideoDataset.from_path(
+        art_path/'videos', fr = None
+    ).label_from_paths()
 
     if args.results_type == 'vision':
         vision_model_name = args.arch + str(args.patch_size)
@@ -255,18 +255,23 @@ if __name__ == '__main__':
             _output_performance(out_path / 'text' / 'sklearn_seq', args.results_type)
 
     else:
-        get_vis_results (vid_ds, args.arch, args.patch_size, art_path, out_path)
-        
-        args.lucene = True if args.results_type == 'vision-text' else False
-        get_txt_results (args.lucene, art_path, out_path)
-
         vision_model_name = args.arch + str(args.patch_size)
         ir_ranking_path, ir_bow_rankings_path = '', ''
-        if args.results_type != 'vision-text':
+
+        dl_ranking_path = out_path / 'vision' / vision_model_name / 'avg' / 'all_rankings.json'
+        if not Path(dl_ranking_path).exists():
+            get_vis_results (vid_ds, args.arch, args.patch_size, art_path, out_path)
+        
+        args.lucene = True if args.results_type == 'vision-text' else False      
+        if not args.lucene:
             ir_ranking_path = (out_path / 'text' / 'sklearn_seq' / 'all_rankings.csv')  
+            if not Path(ir_ranking_path).exists():
+                get_txt_results (args.lucene, art_path, out_path)
         else:
             ir_bow_rankings_path = out_path / 'text' / 'Lucene_bow' / 'all_rankings.json'
-        dl_ranking_path = out_path / 'vision' / vision_model_name / 'avg' / 'all_rankings.json'
+            if not Path(ir_bow_rankings_path).exists():
+                get_txt_results (args.lucene, art_path, out_path)       
+
         settings_path = art_path / 'evaluation_settings'
         combo.combined(out_path / 'combined', dl_ranking_path, ir_ranking_path, ir_bow_rankings_path, settings_path, vision_model_name, "east_trocr")
         
