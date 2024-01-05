@@ -220,7 +220,8 @@ if __name__ == '__main__':
                         help="The replication package path")
     parser.add_argument('--arch', default='vit_base', type=str, choices=['vit_small', 'vit_base'],
                         help='Name of visual architecture to fine-tune')
-    parser.add_argument('--patch_size', default=16, type=int, help='Patch resolution of the model.')
+    parser.add_argument('--patch_size', default=16, type=int, choices=[8, 16],
+                        help='Patch resolution of the model.')
     parser.add_argument('--results_type', default='vision-text-seq', type=str, choices=['vision', 'text', 'vision-text', 'vision-text-seq'],
                         help='The results_type to generate')
     parser.add_argument('--lucene', default=False, type=bool, 

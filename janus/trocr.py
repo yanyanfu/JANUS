@@ -27,6 +27,13 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 
 
+tf.app.flags.DEFINE_string('repro_path', '', '')
+tf.app.flags.DEFINE_string('arch', '', '')
+tf.app.flags.DEFINE_string('patch_size', '', '')
+tf.app.flags.DEFINE_string('results_type', '', '')
+tf.app.flags.DEFINE_bool('lucene', False, '')
+
+
 def resize_image(im, max_side_len=2400):
     '''
     resize image to a size multiple of 32 which is required by the network

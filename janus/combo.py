@@ -189,6 +189,8 @@ def combined(
                 all_new_rankings.append(ranking_info)
     
     print("Writing data")
+
+    Path(out_path).mkdir(parents=True, exist_ok=True) 
     pd.read_json(json.dumps(all_new_results)).to_csv(os.path.join(out_path, 'all_results.csv'),
                                                      index=False, sep=";")
     write_json_line_by_line(all_new_rankings, os.path.join(out_path, 'all_rankings.json'))

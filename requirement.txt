@@ -150,9 +150,6 @@ thinc==7.3.1
 tifffile==2020.9.3
 timm==0.4.12
 tokenizers==0.12.1
-torch==1.7.1+cu110
-torchaudio==0.7.2
-torchvision==0.8.2+cu110
 tornado==6.0.3
 tqdm==4.41.1
 traitlets==4.3.2
