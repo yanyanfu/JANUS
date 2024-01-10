@@ -225,7 +225,9 @@ if __name__ == '__main__':
     parser.add_argument('--results_type', default='vision-text-seq', type=str, choices=['vision', 'text', 'vision-text', 'vision-text-seq'],
                         help='The results_type to generate')
     parser.add_argument('--lucene', default=False, type=bool, 
-                        help='whether use lucene to compute bow similaity for textual JANUS')
+                        help='whether to use lucene to compute bow similaity for textual JANUS')
+    parser.add_argument('--gpu', default=False, type=bool, 
+                        help='whether to use GPU for textual JANUS')
 
     parser.add_argument("--ftk", default=5, type=int, help="Frame rate")
     parser.add_argument("--FPS", default=30, type=int, help="Frame per second")
@@ -237,6 +239,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     art_path = Path(args.repro_path) / 'artifacts'
     out_path = Path(args.repro_path) / 'outputs'
+    if args.gpu == True:
+        os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     logging.info("Loading Videos")
     vid_ds = prep.VideoDataset.from_path(

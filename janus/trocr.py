@@ -121,8 +121,6 @@ def sort_poly(p):
 
 
 def get_text(vid_ds, text_path, ftk):
-    import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     checkpoint_path = text_path / 'east_icdar2015_resnet_v1_50_rbox'
