@@ -32,6 +32,7 @@ tf.app.flags.DEFINE_string('arch', '', '')
 tf.app.flags.DEFINE_string('patch_size', '', '')
 tf.app.flags.DEFINE_string('results_type', '', '')
 tf.app.flags.DEFINE_bool('lucene', False, '')
+tf.app.flags.DEFINE_bool('gpu', False, '')
 
 
 def resize_image(im, max_side_len=2400):
