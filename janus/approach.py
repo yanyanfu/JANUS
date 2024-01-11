@@ -3,8 +3,10 @@ import cv2
 import multiprocessing
 import pickle
 import utils
+import multiprocessing
 
 import numpy as np
+import vision_transformer as vits
 
 from collections import defaultdict, OrderedDict
 from itertools import combinations, combinations_with_replacement, permutations
@@ -175,6 +177,45 @@ def fuzzy_LCS(X, Y, m, n, sim_func, mdl_frame_threshold = 0.0):
     return result / min(m, n), result_weighted / sum_w
 
 
+def fuzzy_LCS_multi(item):
+    X, Y = item
+    m, n = len(X), len(Y)
+    mdl_frame_threshold = 0.0
+    sim_func = vits.frame_sim
+    LCSuff = [[0 for k in range(n + 1)] for l in range(m + 1)]
+    LCSuff_weighted = [[0 for k in range(n + 1)] for l in range(m + 1)]
+
+    # To store the length of longest common substring
+    result = result_weighted = 0
+
+    # Following steps to build LCSuff[m+1][n+1] in bottom up fashion
+    for i in range(0, m + 1):
+        for j in range(0, n + 1):
+            if (i == 0 or j == 0):
+                LCSuff[i][j] = 0
+                LCSuff_weighted[i][j] = 0
+                continue
+
+            sim = sim_func(X[i - 1], Y[j - 1])
+            if sim > mdl_frame_threshold:
+                LCSuff[i][j] = LCSuff[i - 1][j - 1] + sim
+                LCSuff_weighted[i][j] = LCSuff_weighted[i - 1][j - 1] + sim * (i / m) * (j / n)
+                if LCSuff[i][j] > result:
+                    result = LCSuff[i][j]
+                    result_weighted = LCSuff_weighted[i][j]
+            else:
+                LCSuff[i][j] = 0
+                LCSuff_weighted[i][j] = 0
+
+    mini, maxi = min(m, n), max(m, n)
+    sum_w = 0
+    max_v = maxi + 1
+    for i in reversed(range(1, mini + 1)):
+        sum_w += (i / mini) * (max_v / maxi)
+        max_v -= 1
+    return result / min(m, n), result_weighted / sum_w
+
+
 def gen_lcs_similarity(vid_ds, vid_ds_features, sim_func):
     results = defaultdict(
         lambda: defaultdict(
@@ -255,7 +296,41 @@ def gen_text_lcs_similarity(vid_ds, vid_ds_features, sim_func):
             results[app][bug_i][report_i][bug_j][report_j]['weighted_lcs'] = weighted_lcs_sim
 
     return results
-    
+
+
+def gen_text_lcs_similarity_multi(vid_ds, vid_ds_features):
+    results = defaultdict(
+        lambda: defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(
+                    lambda: defaultdict(
+                        lambda: defaultdict(float)
+                    )
+                )
+            )
+        )
+    )
+
+    vid_ds_features = copy.deepcopy(vid_ds_features)
+    for app, bugs in tqdm(vid_ds.labels.items()):
+        l = [(bug, report) for bug in bugs for report in bugs[bug]]
+        pairs = list(x for x in combinations_with_replacement(l, 2) if x[0] != x[1])
+        agg_features = []
+        for (bug_i, report_i), (bug_j, report_j) in tqdm(pairs):
+            agg_features.append((vid_ds_features[app][bug_i][report_i], vid_ds_features[app][bug_j][report_j]))
+
+        cpu_cont = 8
+        pool = multiprocessing.Pool(cpu_cont)
+        agg_results = pool.map(fuzzy_LCS_multi, tqdm(agg_features,total=len(agg_features)))
+        pool.close()
+        pool.join()
+
+        for index, ((bug_i, report_i), (bug_j, report_j)) in enumerate(pairs):
+            results[app][bug_i][report_i][bug_j][report_j]['lcs'] = agg_results[index][0]
+            results[app][bug_i][report_i][bug_j][report_j]['weighted_lcs'] = agg_results[index][1]
+
+    return results
+
 
 def fix_sims(vid_sims, vid_ds):
     for sim_type in vid_sims:

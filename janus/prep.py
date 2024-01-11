@@ -108,6 +108,7 @@ class VideoDataset:
                 videos.append(Video(vid_path, overwrite = overwrite))
         else:
             vid_paths = list(filter(lambda x: "fixed" not in str(x), sorted(path.rglob('*.mp4'))))
+            # vid_paths = sorted(path.rglob(f"*FCS*.mp4"))
             for vid_path in vid_paths:
                 videos.append(Video(vid_path, fr = fr, overwrite = overwrite))
 

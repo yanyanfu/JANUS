@@ -127,7 +127,7 @@ def get_txt_results (lucene, art_path, out_path):
     output_txt_path = engine_path / 'extracted_txt' / f"text_{args.ftk}"
     if not output_txt_path.exists():
         logging.info("Extracting Video Text")
-        trocr.get_text(vid_ds, txt_path, args.ftk)
+        trocr.get_text(vid_ds, txt_path, args.ftk, args.cpu_mode)
     if lucene:
         logging.info("Generating textual JANUS results based on Lucene with the bag-of-words strategy")
         subprocess.check_output(
@@ -137,17 +137,17 @@ def get_txt_results (lucene, art_path, out_path):
     else:
         logging.info("Generating textual JANUS results based on Sklearn with the bag-of-words + weighted_lcs strategy")
         out_seq_path = out_path / 'text'/ 'sklearn_seq'
+        Path(out_seq_path).mkdir(parents=True, exist_ok=True)
         if not (out_seq_path / "rankings.pkl").exists(): 
-            sim_func = vits.frame_sim
             all_text_vec = approach.get_text_features (output_txt_path, 'all_text')
             all_text_vec_frame = approach.get_text_frame_features (output_txt_path)
             text_sim = approach.gen_text_similarity(vid_ds, all_text_vec)
-            lcs_vid_ds_sims = approach.gen_text_lcs_similarity(vid_ds, all_text_vec_frame, sim_func)         
+            lcs_vid_ds_sims = approach.gen_text_lcs_similarity_multi(vid_ds, all_text_vec_frame)         
             rankings = approach.approach(vid_ds, text_sim, lcs_vid_ds_sims)     
             with open(out_seq_path / f"rankings.pkl", "wb") as f:
                 pickle.dump(rankings, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        combo.convert_results_format(out_seq_path, out_path / 'evaluation_settings', "east_trocr")
+        combo.convert_results_format(out_seq_path, art_path / 'evaluation_settings', "east_trocr")
 
     logging.info("-" * 20)
     
@@ -212,6 +212,7 @@ def _output_performance(out_path, results_type):
         )
     print("-" * 20)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -224,10 +225,10 @@ if __name__ == '__main__':
                         help='Patch resolution of the model.')
     parser.add_argument('--results_type', default='vision-text-seq', type=str, choices=['vision', 'text', 'vision-text', 'vision-text-seq'],
                         help='The results_type to generate')
+    parser.add_argument('--cpu_mode', action='store_true', 
+                        help='whether to use GPU for textual JANUS')
     parser.add_argument('--lucene', default=False, type=bool, 
                         help='whether to use lucene to compute bow similaity for textual JANUS')
-    parser.add_argument('--gpu', default=False, type=bool, 
-                        help='whether to use GPU for textual JANUS')
 
     parser.add_argument("--ftk", default=5, type=int, help="Frame rate")
     parser.add_argument("--FPS", default=30, type=int, help="Frame per second")
@@ -239,7 +240,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     art_path = Path(args.repro_path) / 'artifacts'
     out_path = Path(args.repro_path) / 'outputs'
-    if args.gpu == True:
+
+    if not args.cpu_mode:
         os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     logging.info("Loading Videos")

@@ -32,7 +32,7 @@ tf.app.flags.DEFINE_string('arch', '', '')
 tf.app.flags.DEFINE_string('patch_size', '', '')
 tf.app.flags.DEFINE_string('results_type', '', '')
 tf.app.flags.DEFINE_bool('lucene', False, '')
-tf.app.flags.DEFINE_bool('gpu', False, '')
+tf.app.flags.DEFINE_bool('cpu_mode', False, '')
 
 
 def resize_image(im, max_side_len=2400):
@@ -121,9 +121,9 @@ def sort_poly(p):
         return p[[0, 3, 2, 1]]
 
 
-def get_text(vid_ds, text_path, ftk):
+def get_text(vid_ds, text_path, ftk, cpu_mode):
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() and not cpu_mode else "cpu")
     checkpoint_path = text_path / 'east_icdar2015_resnet_v1_50_rbox'
     output_dir = text_path / 'Lucene'/ 'extracted_txt'
 
