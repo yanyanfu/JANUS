@@ -4,7 +4,7 @@ This is the official codebase for the paper "Semantic GUI Scene Learning and Vid
 
 ### Data
 
-All the data related to the benchmark and the project is provided in [Zenodo](Replication Package: https://doi.org/10.5281/zenodo.10455812).
+All the data related to the benchmark and the project is provided in [Zenodo](Replication Package: https://doi.org/10.5281/zenodo.10455811).
 
 * The video-based bug reports are located in the artifacts/videos folder
 * The generated codebooks and the DINO model fine-tuned on Rico dataset for visual JANUS are in the artifacts/models/vision folder
@@ -17,7 +17,7 @@ All the data related to the benchmark and the project is provided in [Zenodo](Re
 
 #### Prerequisites
 - python 3.6
-- download our online replication package on [Zenodo](Replication Package: https://doi.org/10.5281/zenodo.10455812)
+- download our latest replication package on [Zenodo](Replication Package: https://doi.org/10.5281/zenodo.10455811)
 ```bash
 git clone https://github.com/yanyanfu/JANUS
 cd JANUS
