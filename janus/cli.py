@@ -11,7 +11,6 @@ import subprocess
 import argparse
 import os
 import pickle
-import trocr
 import vision_transformer as vits
 import pandas as pd
 import numpy as np
@@ -127,7 +126,7 @@ def get_txt_results (lucene, art_path, out_path):
     output_txt_path = engine_path / 'extracted_txt' / f"text_{args.ftk}"
     if not output_txt_path.exists():
         logging.info("Extracting Video Text")
-        trocr.get_text(vid_ds, txt_path, args.ftk, args.cpu_mode)
+        # trocr.get_text(vid_ds, txt_path, args.ftk, args.cpu_mode)
     if lucene:
         logging.info("Generating textual JANUS results based on Lucene with the bag-of-words strategy")
         subprocess.check_output(
