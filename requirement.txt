@@ -137,15 +137,9 @@ spacy==2.2.3
 srsly==1.0.1
 statsmodels==0.12.2
 tb-nightly==1.15.0a20190806
-tensorboard==2.2.0
-tensorboard-plugin-wit==1.6.0.post3
-tensorflow-estimator==2.2.0
-tensorflow==2.2.0
 termcolor==1.1.0
 terminado==0.8.2
 testpath==0.4.2
-tf-estimator-nightly==1.14.0.dev2019080601
-tf-slim==1.1.0
 thinc==7.3.1
 tifffile==2020.9.3
 timm==0.4.12

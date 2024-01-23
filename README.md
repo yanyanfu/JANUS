@@ -41,7 +41,7 @@ cd janus
 #### Reproduce the Results
 ```bash
 python cli.py \
-    --repro_path /projects/JANUS_reproduction_package \
+    --repro_path /scratch/projects/yyan/DINO/JANUS_reproduction_package \
     --arch  vit_base \
     --patch_size  16 \
     --results_type vision-text-seq \
